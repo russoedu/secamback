@@ -1,0 +1,21 @@
+{
+  "checkTime": 1000,
+  "forceAfterChecks": 30,
+  "captureStillsAfterChangeDetected": 30,
+  "imageDiffComparison": 0.3,
+  "storageFolder": "F:/My Drive/Imagens/Secamback",
+  "servers": [
+    {
+      "name": "Hall Camera",
+      "rtsp": "rtsp://username135:password135@192.168.1.135/live0"
+    },
+    {
+      "name": "Living Room Camera",
+      "rtsp": "rtsp://username134:password134@192.168.1.134/live0"
+    },
+    {
+      "name": "Bedroom Camera",
+      "rtsp": "rtsp://username136:password136@192.168.1.136/live0"
+    }
+  ]
+}

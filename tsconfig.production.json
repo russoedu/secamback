@@ -1,0 +1,11 @@
+{
+  "extends": "tsconfig",
+  "compilerOptions": {
+
+    "declaration": false,                              /* Generate .d.ts files from TypeScript and JavaScript files in your project. */
+    "declarationMap": false,                           /* Create sourcemaps for d.ts files. */
+    "sourceMap": false,                                /* Create source map files for emitted JavaScript files. */
+    "removeComments": true,                           /* Disable emitting comments. */
+    },
+  "exclude":["*.test.ts"]
+}

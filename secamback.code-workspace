@@ -1,0 +1,70 @@
+{
+  "folders": [
+    {
+      "path": "."
+    }
+  ],
+  "settings": {
+    "jest.autoRun": {
+      "watch": false,
+      "onSave": "test-file",
+      "onStartup": [
+        "all-tests"
+      ]
+    },
+    "files.exclude": {
+      "bin": true,
+      "node_modules": true,
+      ".tmp": true,
+      ".editorconfig": true,
+      ".eslintignore": true,
+      ".eslintrc.js": true,
+      ".gitignore": true,
+      "jest.config.js": true,
+      "tsconfig*": true,
+      "package-lock.json": true,
+    },
+    "typescript.tsdk": ".\\\\node_modules\\\\typescript\\\\lib",
+    "cSpell.words": [
+      "camaraip",
+      "loglevel",
+      "modelgroups",
+      "rtsp",
+      "vframes"
+    ]
+  },
+  "launch": {
+    "configurations": [
+      {
+        "name": "Start",
+        "command": "npm start",
+        "request": "launch",
+        "type": "node-terminal"
+      },
+      {
+        "name": "Build",
+        "command": "npm run build",
+        "request": "launch",
+        "type": "node-terminal"
+      },
+      {
+        "name": "Test",
+        "command": "npm test",
+        "request": "launch",
+        "type": "node-terminal"
+      },
+      {
+        "name": "Publish",
+        "command": "npm publish",
+        "request": "launch",
+        "type": "node-terminal"
+      },
+      {
+        "name": "Update",
+        "command": "npm run update",
+        "request": "launch",
+        "type": "node-terminal"
+      }
+    ]
+  }
+}

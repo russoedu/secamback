@@ -1,0 +1,6 @@
+.DS_store
+node_modules
+bin
+coverage
+config.json
+.tmp/*.jpg
