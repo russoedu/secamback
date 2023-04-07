@@ -1,15 +1,30 @@
 import Jimp, { read } from 'jimp'
+import config from '../config.json'
 import { TmpImage } from './types'
 
-export class Image {
+class Image {
   cache: {
     [server: string]: {
       path: string,
       stillsAfterChangeDetectedCount: number,
       changeDetected: boolean
       forceAfterChecksCount: number,
-      lastCaptureImage: Jimp
+      lastCaptureImage: Jimp|null
+      lastCaptureImagePath: string
     }
+  }
+
+  constructor () {
+    config.servers.forEach(server => {
+      this.cache[server.name] = {
+        path:                           `${config.storageFolder}/${server.name}`,
+        stillsAfterChangeDetectedCount: 0,
+        changeDetected:                 false,
+        forceAfterChecksCount:          0,
+        lastCaptureImage:               null,
+        lastCaptureImagePath:           'null',
+      }
+    })
   }
 
   /*
@@ -30,6 +45,8 @@ export class Image {
    *    else
    *      changeDetected = true
    *      Store image
+   * delete last tmp image
+   * update lastCaptureImage and lastCaptureImagePath
    */
   async process (image: TmpImage) {
     const data = await read(image.path)
@@ -41,3 +58,6 @@ export class Image {
     // console.log(`diff.percent   ${Jimp.diff(edinburgh_original, edinburgh_sharpened).percent}\n`);
   }
 }
+
+const image = new Image()
+export { image }

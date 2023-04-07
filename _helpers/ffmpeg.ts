@@ -1,8 +1,9 @@
 import { exec } from 'child_process'
-import { TmpImage, LogLevel, Server } from './types'
+import config from '../config.json'
 import { _ } from './format'
+import { LogLevel, Server, TmpImage } from './types'
 
-export class FFmpeg {
+class FFmpeg {
   #servers: Server[]
   #defaultCommand = [
     '-rtsp_transport tcp',
@@ -14,10 +15,9 @@ export class FFmpeg {
 
   /**
    * Encapsulates the execution of FFmpeg to download still images in the temporary folder of all RTSP servers in parallel
-   * @param servers The list of RTSP servers
    */
-  constructor (servers: Server[]) {
-    this.#servers = servers
+  constructor () {
+    this.#servers = config.servers
   }
 
   /**
@@ -55,3 +55,6 @@ export class FFmpeg {
     })
   }
 }
+
+const ffmpeg = new FFmpeg()
+export { ffmpeg }

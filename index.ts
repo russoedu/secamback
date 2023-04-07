@@ -1,9 +1,7 @@
-import { FFmpeg } from './_helpers/FFmpeg'
-import { Image } from './_helpers/Image'
+import { ffmpeg } from './_helpers/ffmpeg'
+import { image } from './_helpers/image'
 import config from './config.json'
 
-const ffmpeg = new FFmpeg(config.servers)
-const img = new Image()
 /*
  * Check every X seconds (config)
  * Save a tmp image
@@ -15,5 +13,5 @@ const img = new Image()
  */
 setInterval(async function () {
   const tmpImages = await ffmpeg.run()
-  await img.process(tmpImages[0])
+  await image.process(tmpImages[0])
 }, config.checkTime)
