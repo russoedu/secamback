@@ -24,9 +24,11 @@ class FFmpeg {
    * Saves a still image from all servers in the temporary folder
    * @returns An array with the path of the files saved in the temporary folder for each RTSP server
    */
-  run () {
-    return Promise
+  async run () {
+    const tmpImages = await Promise
       .all(this.#servers.map(server => this.#ffmpeg(server)))
+
+    return tmpImages
   }
 
   /**
@@ -37,7 +39,8 @@ class FFmpeg {
    */
   #ffmpeg (server: Server, log?: LogLevel): Promise<TmpImage> {
     return new Promise((resolve) => {
-      const path = `./.tmp/${server.name}-${_.formattedDate}.jpg`
+      const name = `${server.name}-${_.formattedDate}.jpg`
+      const path = `./.tmp/${name}`
       const command = `ffmpeg -i ${server.rtsp} ${this.#defaultCommand} "${path}"`
 
       exec(command, (error, stdout) => {
@@ -50,6 +53,7 @@ class FFmpeg {
         resolve({
           server: server.name,
           path,
+          name,
         })
       })
     })
