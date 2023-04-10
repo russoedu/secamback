@@ -3,8 +3,9 @@ class Formatter {
     const date = new Date()
       .toISOString()
       .replace(/\//g, '.')
-      .replace(/[T|Z]/g, '')
+      .replace('T', ' ')
       .replace(/:/g, '-')
+      .replace('Z', '')
 
     return date
   }

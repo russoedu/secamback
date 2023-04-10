@@ -1,7 +1,7 @@
 import { exec } from 'child_process'
-import config from '../config.json'
 import { _ } from './format'
 import { LogLevel, Server, TmpImage } from './types'
+import { config } from './config'
 
 class FFmpeg {
   #servers: Server[]
@@ -17,7 +17,12 @@ class FFmpeg {
    * Encapsulates the execution of FFmpeg to download still images in the temporary folder of all RTSP servers in parallel
    */
   constructor () {
-    this.#servers = config.servers
+    try {
+      this.#servers = config.servers
+    } catch (error: any) {
+      console.error(error.message)
+      process.exit()
+    }
   }
 
   /**
@@ -39,16 +44,23 @@ class FFmpeg {
    */
   #ffmpeg (server: Server, log?: LogLevel): Promise<TmpImage> {
     return new Promise((resolve) => {
-      const name = `${server.name}-${_.formattedDate}.jpg`
+      const name = `•-•-•-•${server.name}•-•-•-•${_.formattedDate}.jpg`
       const path = `./.tmp/${name}`
       const command = `ffmpeg -i ${server.rtsp} ${this.#defaultCommand} "${path}"`
 
       exec(command, (error, stdout) => {
         if (log === LogLevel.ALL) {
-          if (error) console.log(error)
-          if (stdout) console.log(stdout)
+          if (error) {
+            console.log(`Server ${server.name} error:`)
+            console.log(error)
+            console.log(stdout)
+          }
         } else if (log === LogLevel.ERROR) {
-          if (error) console.log(error)
+          if (error) {
+            console.log(`Server ${server.name} error:`)
+            console.log(error)
+            console.log(stdout)
+          }
         }
         resolve({
           server: server.name,

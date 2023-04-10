@@ -15,23 +15,22 @@
     "files.exclude": {
       "bin": true,
       "node_modules": true,
-      ".tmp": true,
       ".editorconfig": true,
       ".eslintignore": true,
       ".eslintrc.js": true,
-      ".gitignore": true,
+      // ".gitignore": true,
       "jest.config.js": true,
       "tsconfig*": true,
       "package-lock.json": true,
     },
-    "typescript.tsdk": ".\\\\node_modules\\\\typescript\\\\lib",
     "cSpell.words": [
       "camaraip",
       "loglevel",
       "modelgroups",
       "rtsp",
       "vframes"
-    ]
+    ],
+    "typescript.tsdk": "node_modules\\typescript\\lib"
   },
   "launch": {
     "configurations": [

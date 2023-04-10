@@ -1,6 +1,6 @@
 .DS_store
 node_modules
 bin
+.tmp
 coverage
-config.json
-.tmp/*.jpg
+config.yml

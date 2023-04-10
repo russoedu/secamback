@@ -9,11 +9,11 @@ export type TmpImage = {
   path: string
   name: string
 }
-export type Config = {
+export type ConfigT = {
   checkTime: number
-  maxTime: number
-  captureTimeAfterChange: number
   imageDiffComparison: number
+  captureStillsAfterChangeDetected: number
+  forceStillAfter: number
   storageFolder: string
   servers: Server[]
 }

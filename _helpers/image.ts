@@ -1,39 +1,20 @@
-import { copyFileSync, mkdirSync, rmSync } from 'fs'
-import Jimp, { read, diff } from 'jimp'
-import config from '../config.json'
-import { CacheT, TmpImage } from './types'
+import Jimp, { diff, read } from 'jimp'
+import { Cache } from './Cache'
+import { file } from './file'
+import { TmpImage } from './types'
+import { config } from './config'
 
 class Image {
-  cache: { [server: string]: CacheT } = {}
+  cache: { [server: string]: Cache } = {}
 
   constructor () {
     config.servers.forEach(server => {
-      const path = `${config.storageFolder}/${server.name}`
-      this.cache[server.name] = {
-        path,
-        stillsAfterLastChange: 0,
-        changeDetected:        false,
-        forceStillAfterCount:  0,
-        lastCaptureImage:      null,
-        lastCaptureImagePath:  '',
-      }
-      // Create folders if they don't exist
-      try {
-        mkdirSync(path)
-      } catch (error: any) {
-        if (error.code !== 'EEXIST') throw error
-      }
+      this.cache[server.name] = new Cache(server)
     })
   }
 
   async process (images: TmpImage[]) {
-    const imagesData = await Promise.all(images.map(image => this.#process(image)))
-
-    console.log(imagesData)
-
-    // console.log(`distance       ${Jimp.distance(edinburgh_original, edinburgh_sharpened)}`);
-
-    // console.log(`diff.percent   ${Jimp.diff(edinburgh_original, edinburgh_sharpened).percent}\n`);
+    await Promise.all(images.map(image => this.#process(image)))
   }
 
   async #process (image: TmpImage) {
@@ -43,70 +24,113 @@ class Image {
     if (cache.lastCaptureImage) {
       const changed = this.#changeDetected(jimpImage, cache.lastCaptureImage)
       if (changed) {
-        // Change was detected. Store the still, set `changeDetected` to true and reset the counts
-        this.#moveAndCache(cache, image, jimpImage)
-        cache.changeDetected = true
-        cache.stillsAfterLastChange = 0
-        cache.forceStillAfterCount = 0
+        this.#wasChangedNow(cache, image, jimpImage)
       } else if (cache.changeDetected) {
-        // Change was not detected now, but `changeDetected` is active. Store the still and check if it's the last one to set `changeDetected` back to false
-        this.#moveAndCache(cache, image, jimpImage)
-        cache.stillsAfterLastChange++
-        if (cache.stillsAfterLastChange >= config.captureStillsAfterChangeDetected) {
-          cache.changeDetected = false
-          cache.stillsAfterLastChange = 0
-        }
+        this.#wasChangedBefore(cache, image, jimpImage)
       } else {
-        // Change was not detected and `changeDetected` is not active. Increase the force count
-        cache.forceStillAfterCount++
-
-        if (cache.forceStillAfterCount >= config.forceStillAfter) {
-          // Force count reached the max. Store the still and reset
-          this.#moveAndCache(cache, image, jimpImage)
-          cache.forceStillAfterCount = 0
-        } else {
-          // Force count not reached max, just delete the temporary image
-          rmSync(image.path)
-        }
+        this.#noChange(cache, image, jimpImage)
       }
     } else {
       // First capture is always performed
-      this.#moveAndCache(cache, image, jimpImage)
-
-      cache.forceStillAfterCount++
+      this.#moveAndUpdateLast(cache, image, jimpImage)
     }
   }
 
   /**
-   * Moves the temp file to the final destination and stored its data in the cache
+   * Executes the updates in the files and cache when a change was detected.
+   *
+   * - Stores the still in the final folder
+   * - sets `changeDetected` to true
+   * - resets `stillsAfterLastChange` count
+   * - resets `forceStillAfterCount` count
+   * @param cache The server cache
+   * @param image The current captured image path
+   * @param jimpImage The current captured image
+   */
+  #wasChangedNow (cache: Cache, image: TmpImage, jimpImage: Jimp) {
+    this.#moveAndUpdateLast(cache, image, jimpImage)
+    cache.changeDetected = true
+    cache.stillsAfterLastChange = 0
+    cache.forceStillAfterCount = 0
+  }
+
+  /**
+   * Executes the updates in the files and cache when a change was detected before, but not now (`changeDetected` is true).
+   *
+   * - Stores the still in the final folder
+   * - increases `stillsAfterLastChange` count
+   * - resets `forceStillAfterCount` count
+   *
+   * Finally, checks if `stillsAfterLastChange` reached `captureStillsAfterChangeDetected` from the config and if true:
+   * - sets `changeDetected` to false
+   * - resets `stillsAfterLastChange` count
+   * @param cache The server cache
+   * @param image The current captured image path
+   * @param jimpImage The current captured image
+   */
+  #wasChangedBefore (cache: Cache, image: TmpImage, jimpImage: Jimp) {
+    this.#moveAndUpdateLast(cache, image, jimpImage)
+    cache.stillsAfterLastChange++
+    cache.forceStillAfterCount = 0
+
+    if (cache.stillsAfterLastChange >= config.captureStillsAfterChangeDetected) {
+      cache.changeDetected = false
+      cache.stillsAfterLastChange = 0
+    }
+  }
+
+  /**
+   * Executes the updates in the files and cache when a change was not detected and `changeDetected` is false.
+   *
+   * - increases `forceStillAfterCount` count
+   *
+   * Then checks if `forceStillAfterCount` reached `forceStillAfter` from the config and if true:
+   * - Stores the still in the final folder
+   * - resets `forceStillAfterCount` count
+   *
+   * If false
+   * - Deletes the still in the temporary folder
+   * @param cache The server cache
+   * @param image The current captured image path
+   * @param jimpImage The current captured image
+   */
+  #noChange (cache: Cache, image: TmpImage, jimpImage: Jimp) {
+    cache.forceStillAfterCount++
+
+    if (cache.forceStillAfterCount >= config.forceStillAfter) {
+      // Force count reached the max. Store the still and reset
+      this.#moveAndUpdateLast(cache, image, jimpImage)
+      cache.forceStillAfterCount = 0
+    } else {
+      // Force count not reached max, just delete the temporary image
+      file.delete(image.path)
+    }
+  }
+
+  /**
+   * Moves the temp file to the final destination and updates the cache
    * @param cache The server cache data
    * @param image The temporary image data
    * @param jimpImage The last captured Jimp image
    */
-  #moveAndCache (cache: CacheT, image: TmpImage, jimpImage: Jimp) {
+  #moveAndUpdateLast (cache: Cache, image: TmpImage, jimpImage: Jimp) {
     const tempPath = image.path
     const finalPath = `${cache.path}/${image.name}`
 
-    cache.lastCaptureImage = jimpImage
-    cache.lastCaptureImagePath = finalPath
-
-    this.#moveFile(tempPath, finalPath)
+    cache.updateLast(image, jimpImage)
+    file.move(tempPath, finalPath)
   }
 
+  /**
+   * Compares two images for their differences
+   * @param lastImage The last captured image
+   * @param currentImage The current image
+   * @returns True if the difference between the two images is bigger than the configured value
+   */
   #changeDetected (lastImage: Jimp, currentImage: Jimp) {
     const difference = diff(lastImage, currentImage)
 
     return difference.percent > config.imageDiffComparison
-  }
-
-  /**
-   * Moves the file from the origin to the destiny. As we are not sure if the file is stored in another drive, we copy and delete instead of moving.
-   * @param origin The file path
-   * @param destination The file path destination
-   */
-  #moveFile (origin: string, destination: string) {
-    copyFileSync(origin, destination)
-    rmSync(origin)
   }
 }
 
